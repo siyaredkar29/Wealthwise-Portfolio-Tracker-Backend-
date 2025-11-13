@@ -1,0 +1,35 @@
+
+
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+DO $$ BEGIN
+    CREATE TYPE tx_type AS ENUM ('BUY','SELL');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+CREATE TABLE IF NOT EXISTS transactions (
+  id SERIAL PRIMARY KEY,
+  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  symbol VARCHAR(20) NOT NULL,
+  type tx_type NOT NULL,
+  units INT NOT NULL CHECK (units > 0),
+  price NUMERIC(12,2) NOT NULL CHECK (price >= 0),
+  date DATE NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS prices (
+  symbol VARCHAR(20) PRIMARY KEY,
+  price NUMERIC(12,2) NOT NULL,
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+INSERT INTO prices(symbol, price) VALUES
+('TCS', 3400.00), ('INFY', 1500.00), ('RELIANCE', 2600.00)
+ON CONFLICT (symbol) DO UPDATE SET price = EXCLUDED.price;
